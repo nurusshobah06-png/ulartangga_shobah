@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ular Tangga IPAS Kelas 3 - Bu Shobah</title>
+    <!-- Import Font ramah anak dari Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Import Canvas Confetti untuk animasi kemenangan -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+            --accent: #FFE66D;
+            --text-color: #2D3436;
+            --bg-color: #87CEEB; /* Biru langit ceria */
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-weight: 700;
+            color: #fff;
+            background: var(--primary);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 600px; /* Ukuran disesuaikan agar proporsional */
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dice-btn {
+            font-family: 'Fredoka One', cursive;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 5px 0 #d63031;
+        }
+
+        .dice-btn:hover {
+            transform: translateY(-2px);
+            background-color: #ff5252;
+        }
+
+        .dice-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #d63031;
+        }
+
+        .dice-btn:disabled {
+            background-color: #b2bec3;
+            box-shadow: 0 5px 0 #636e72;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .dice-result {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2rem;
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: #d35400;
+        }
+
+        .board-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            /* Latar belakang menggunakan gambar yang Ibu unggah */
+            background-image: url('c82ee0632e62a3f1fe03592000ffef2b.jpg'); 
+            background-size: 100% 100%; /* Diubah agar gambar terentang pas menutupi seluruh area 6x6 */
+            background-repeat: no-repeat;
+            background-position: center;
+            border: 4px solid var(--primary);
+            border-radius: 10px;
+            background-color: #fff; 
+        }
+
+        .board {
+            /* Grid diubah menjadi 6x6 (36 kotak) untuk menyesuaikan dengan gambar */
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .cell {
+            /* Border dihilangkan agar gambar background terlihat bersih */
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Label angka dan 'Soal' diberi background semi-transparan agar tetap terbaca walau background ramai */
+        .cell-content-wrapper {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 2px 6px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            pointer-events: none; /* Agar tidak menghalangi klik jika ada */
+        }
+
+        .cell-number {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            color: #d63031;
+            line-height: 1;
+        }
+
+        .cell-label {
+            font-size: 0.6rem;
+            font-weight: bold;
+            color: #0984e3;
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Bidak Pemain */
+        .player {
+            width: 35px;
+            height: 35px;
+            background-color: #0984e3;
+            border: 3px solid white;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 0.5s ease-in-out;
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        /* Modal / Pop-up Soal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            position: relative;
+            border: 5px solid var(--secondary);
+        }
+
+        .bu-shobah-avatar {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: -60px auto 15px;
+            border: 4px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .option-btn {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            background: #f1f2f6;
+            border: 2px solid #dfe4ea;
+            padding: 12px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .option-btn:hover {
+            background: var(--accent);
+            border-color: #f39c12;
+            transform: scale(1.05);
+        }
+
+        #feedback-message {
+            margin-top: 15px;
+            font-weight: 700;
+            min-height: 24px;
+        }
+
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Ular Tangga IPAS</h1>
+    <div class="subtitle">Bersama Bu Shobah 🧕 - Kelas 3 SDIT BIC</div>
+
+    <div class="game-container">
+        <div class="controls">
+            <button class="dice-btn" id="btn-roll" onclick="rollDice()">🎲 Kocok Dadu</button>
+            <div class="dice-result" id="dice-display">?</div>
+        </div>
+
+        <div class="board-wrapper">
+            <div class="board" id="board">
+                <!-- Grid 6x6 akan diisi via JavaScript -->
+            </div>
+            <div class="player" id="player">🧑‍🎓</div>
+        </div>
+    </div>
+
+    <!-- Modal Soal -->
+    <div class="modal-overlay" id="question-modal">
+        <div class="modal">
+            <div class="bu-shobah-avatar">🧕</div>
+            <div class="question-text" id="question-text">Pertanyaan akan muncul di sini...</div>
+            <div class="options-container" id="options-container">
+                <!-- Tombol pilihan akan dirender di sini -->
+            </div>
+            <div id="feedback-message"></div>
+        </div>
+    </div>
+
+    <!-- Modal Menang -->
+    <div class="modal-overlay" id="win-modal">
+        <div class="modal" style="border-color: var(--accent);">
+            <div class="bu-shobah-avatar" style="background: var(--accent);">🏆</div>
+            <h2 style="font-family: 'Fredoka One'; color: var(--primary);">Selamat Anak Hebat!</h2>
+            <p style="font-size: 1.2rem; font-weight: 700;">Kamu berhasil mencapai Finish dan menyelesaikan semua soal IPAS dengan luar biasa!</p>
+            <button class="dice-btn" style="margin-top: 20px;" onclick="location.reload()">Main Lagi Yuk!</button>
+        </div>
+    </div>
+
+    <!-- Modal Notifikasi Ular/Tangga Pengganti Alert -->
+    <div class="modal-overlay" id="notification-modal">
+        <div class="modal" id="notification-content" style="border-color: var(--primary);">
+            <div class="bu-shobah-avatar" id="notification-icon">💬</div>
+            <h2 id="notification-title" style="font-family: 'Fredoka One'; margin-top: 10px;">Perhatian!</h2>
+            <p id="notification-text" style="font-size: 1.2rem; font-weight: 700; color: var(--text-color);"></p>
+            <button class="dice-btn" style="margin-top: 20px;" onclick="closeNotification()">Lanjut Main</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. BANK SOAL IPAS KELAS 3 (35 Soal) ---
+        const soalIPAS = {
+            1: { q: "Makhluk hidup bernapas menghirup...", opts: ["A. Oksigen", "B. Karbondioksida", "C. Nitrogen", "D. Asap"], ans: 0 },
+            2: { q: "Bagian tumbuhan yang berfungsi menyerap air dari tanah adalah...", opts: ["A. Daun", "B. Batang", "C. Akar", "D. Bunga"], ans: 2 },
+            3: { q: "Perubahan wujud benda dari padat menjadi cair disebut...", opts: ["A. Membeku", "B. Mencair", "C. Menguap", "D. Mengembun"], ans: 1 },
+            4: { q: "Sumber energi panas terbesar bagi bumi adalah...", opts: ["A. Api", "B. Bulan", "C. Bintang", "D. Matahari"], ans: 3 },
+            5: { q: "Hewan pemakan tumbuhan disebut...", opts: ["A. Karnivora", "B. Herbivora", "C. Omnivora", "D. Insektivora"], ans: 1 },
+            6: { q: "Benda yang bentuknya selalu mengikuti wadahnya adalah benda...", opts: ["A. Padat", "B. Cair", "C. Gas", "D. Keras"], ans: 1 },
+            7: { q: "Proses tumbuhan membuat makanannya sendiri disebut...", opts: ["A. Fotosintesis", "B. Metamorfosis", "C. Penyerbukan", "D. Perkembangbiakan"], ans: 0 },
+            8: { q: "Hewan yang berkembang biak dengan cara bertelur disebut...", opts: ["A. Vivipar", "B. Ovipar", "C. Ovovivipar", "D. Mamalia"], ans: 1 },
+            9: { q: "Angin terjadi karena udara yang...", opts: ["A. Berhenti", "B. Bergerak", "C. Dingin", "D. Panas"], ans: 1 },
+            10: { q: "Benda gas memiliki sifat khusus yaitu...", opts: ["A. Bentuk tetap", "B. Memenuhi ruangan", "C. Dapat digenggam", "D. Sulit diubah"], ans: 1 },
+            11: { q: "Es batu yang diletakkan di bawah sinar matahari akan mengalami peristiwa...", opts: ["A. Mencair", "B. Membeku", "C. Menyublim", "D. Mengkristal"], ans: 0 },
+            12: { q: "Tumbuhan yang hidup di air contohnya adalah...", opts: ["A. Mawar", "B. Kaktus", "C. Teratai", "D. Mangga"], ans: 2 },
+            13: { q: "Arah matahari terbit adalah dari sebelah...", opts: ["A. Barat", "B. Selatan", "C. Utara", "D. Timur"], ans: 3 },
+            14: { q: "Alat pernapasan pada ikan adalah...", opts: ["A. Paru-paru", "B. Trakea", "C. Insang", "D. Kulit"], ans: 2 },
+            15: { q: "Air yang dimasukkan ke dalam freezer akan mengalami perubahan wujud menjadi...", opts: ["A. Cair", "B. Gas", "C. Padat", "D. Uap"], ans: 2 },
+            16: { q: "Alat indra yang berfungsi untuk mendengar bunyi adalah...", opts: ["A. Mata", "B. Hidung", "C. Kulit", "D. Telinga"], ans: 3 },
+            17: { q: "Contoh sumber energi alternatif adalah...", opts: ["A. Bensin", "B. Angin", "C. Batu Bara", "D. Minyak Bumi"], ans: 1 },
+            18: { q: "Langit gelap dan awan hitam merupakan pertanda akan turun...", opts: ["A. Panas", "B. Salju", "C. Hujan", "D. Pelangi"], ans: 2 },
+            19: { q: "Hewan yang dapat hidup di air dan di darat disebut...", opts: ["A. Amfibi", "B. Reptil", "C. Mamalia", "D. Burung"], ans: 0 },
+            20: { q: "Bunyi dihasilkan oleh benda yang...", opts: ["A. Diam", "B. Bergetar", "C. Menyala", "D. Mengkilap"], ans: 1 },
+            21: { q: "Daun umumnya berwarna hijau karena memiliki zat...", opts: ["A. Klorofil", "B. Karoten", "C. Oksigen", "D. Air"], ans: 0 },
+            22: { q: "Benda yang dapat ditarik dengan kuat oleh magnet adalah...", opts: ["A. Plastik", "B. Kertas", "C. Kayu", "D. Besi"], ans: 3 },
+            23: { q: "Kebutuhan utama makhluk hidup untuk bertahan hidup adalah...", opts: ["A. Pakaian", "B. Rumah", "C. Makanan dan Minuman", "D. Kendaraan"], ans: 2 },
+            24: { q: "Planet yang kita tinggali saat ini bernama...", opts: ["A. Mars", "B. Venus", "C. Bumi", "D. Jupiter"], ans: 2 },
+            25: { q: "Cuaca yang cerah sangat cocok untuk kegiatan...", opts: ["A. Menjemur pakaian", "B. Tidur", "C. Memakai jas hujan", "D. Menyalakan lampu"], ans: 0 },
+            // Soal Tambahan karena grid 6x6 (36 kotak)
+            26: { q: "Air yang dipanaskan terus menerus akan berubah menjadi...", opts: ["A. Es", "B. Uap air", "C. Padat", "D. Embun"], ans: 1 },
+            27: { q: "Hewan yang bergerak dengan cara melompat adalah...", opts: ["A. Kucing", "B. Katak", "C. Ular", "D. Ikan"], ans: 1 },
+            28: { q: "Matahari terbenam di sebelah...", opts: ["A. Timur", "B. Barat", "C. Utara", "D. Selatan"], ans: 1 },
+            29: { q: "Bagian bunga yang berwarna-warni dan indah disebut...", opts: ["A. Akar", "B. Kelopak", "C. Mahkota", "D. Tangkai"], ans: 2 },
+            30: { q: "Benda padat yang jika ditekan dapat berubah bentuk adalah...", opts: ["A. Batu", "B. Kayu", "C. Besi", "D. Plastisin/Malam"], ans: 3 },
+            31: { q: "Contoh hewan pemakan daging (karnivora) adalah...", opts: ["A. Sapi", "B. Kambing", "C. Harimau", "D. Kelinci"], ans: 2 },
+            32: { q: "Energi yang digunakan untuk menyalakan televisi adalah energi...", opts: ["A. Panas", "B. Gerak", "C. Listrik", "D. Kimia"], ans: 2 },
+            33: { q: "Ciri-ciri lingkungan yang sehat adalah...", opts: ["A. Banyak sampah", "B. Udara bersih", "C. Selokan mampet", "D. Bau tidak sedap"], ans: 1 },
+            34: { q: "Alat untuk mengukur suhu badan adalah...", opts: ["A. Timbangan", "B. Penggaris", "C. Termometer", "D. Jam"], ans: 2 },
+            35: { q: "Pakaian tebal biasanya kita gunakan saat cuaca...", opts: ["A. Panas", "B. Dingin", "C. Cerah", "D. Berawan"], ans: 1 }
+            // Kotak 36 tidak ada soal karena Finish
+        };
+
+        // --- 2. LOGIKA ULAR DAN TANGGA ---
+        // Disesuaikan dengan jalur di gambar yang Ibu kirim (36 kotak)
+        const snakesAndLadders = {
+            2: { type: 'tangga', to: 11, msg: "Wah hebat! Kamu naik tangga! 🪜" },
+            12: { type: 'tangga', to: 24, msg: "Alhamdulillah, naik tangga tinggi! 🪜" },
+            22: { type: 'tangga', to: 27, msg: "Subhanallah, naik lagi! 🪜" },
+            10: { type: 'ular', to: 4, msg: "Ups, kamu tergelincir turun ular. Tetap semangat ya! 🐍" },
+            18: { type: 'ular', to: 7, msg: "Aduh, turun ular sebentar. Pantang menyerah anak pintar! 🐍" },
+            24: { type: 'ular', to: 15, msg: "Gapapa turun, namanya juga belajar! Semangat! 🐍" },
+            35: { type: 'ular', to: 21, msg: "Sabar ya nak, turun sedikit, perjalanan masih panjang! 🐍" }
+        };
+
+        // --- 3. INISIALISASI PAPAN PERMAINAN 6x6 ---
+        // Urutan kotak zig-zag dari bawah (1) ke atas (36)
+        const boardOrder = [
+            36, 35, 34, 33, 32, 31, // Baris 6 (Atas) - Kanan ke Kiri / Kiri ke Kanan tergantung pola
+            25, 26, 27, 28, 29, 30, // Baris 5
+            24, 23, 22, 21, 20, 19, // Baris 4
+            13, 14, 15, 16, 17, 18, // Baris 3
+            12, 11, 10,  9,  8,  7, // Baris 2
+             1,  2,  3,  4,  5,  6  // Baris 1 (Bawah) - Mulai Kiri
+        ];
+
+        const boardEl = document.getElementById('board');
+        const cellElements = {}; // Menyimpan referensi kotak
+
+        function createBoard() {
+            boardOrder.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${num}`;
+                
+                // Pembungkus background putih semi transparan agar tulisan terbaca
+                const textWrapper = document.createElement('div');
+                textWrapper.className = 'cell-content-wrapper';
+
+                const numberText = document.createElement('div');
+                numberText.className = 'cell-number';
+                numberText.innerText = num;
+                
+                const label = document.createElement('div');
+                label.className = 'cell-label';
+                label.innerText = num === 36 ? 'FINISH' : 'Soal';
+                if(num === 36) {
+                    label.style.background = '#e17055';
+                    label.style.color = '#fff';
+                    label.style.padding = '2px 4px';
+                    label.style.borderRadius = '4px';
+                }
+
+                textWrapper.appendChild(numberText);
+                textWrapper.appendChild(label);
+                cell.appendChild(textWrapper);
+                
+                boardEl.appendChild(cell);
+                cellElements[num] = cell;
+            });
+        }
+        createBoard();
+
+        // --- 4. MEKANIK GAME ---
+        let currentPosition = 1;
+        let isMoving = false;
+        const playerEl = document.getElementById('player');
+        const btnRoll = document.getElementById('btn-roll');
+        const diceDisplay = document.getElementById('dice-display');
+
+        // Posisikan bidak di kotak awal (1) saat pertama load
+        window.onload = () => {
+            setTimeout(() => movePlayerTo(1, true), 100);
+        };
+
+        function movePlayerTo(square, instant = false) {
+            const targetCell = cellElements[square];
+            if(!targetCell) return;
+
+            const boardRect = boardEl.getBoundingClientRect();
+            const cellRect = targetCell.getBoundingClientRect();
+            
+            // Hitung posisi relatif ke tengah kotak
+            const top = cellRect.top - boardRect.top + (cellRect.height / 2) - 17.5; // 17.5 adalah setengah lebar bidak
+            const left = cellRect.left - boardRect.left + (cellRect.width / 2) - 17.5;
+
+            if (instant) {
+                playerEl.style.transition = 'none';
+            } else {
+                playerEl.style.transition = 'all 0.5s ease-in-out';
+            }
+
+            playerEl.style.top = `${top}px`;
+            playerEl.style.left = `${left}px`;
+            currentPosition = square;
+        }
+
+        function rollDice() {
+            if (isMoving) return;
+            isMoving = true;
+            btnRoll.disabled = true;
+
+            let rollCount = 0;
+            const rollInterval = setInterval(() => {
+                diceDisplay.innerText = Math.floor(Math.random() * 6) + 1;
+                rollCount++;
+                if (rollCount > 10) {
+                    clearInterval(rollInterval);
+                    const finalRoll = Math.floor(Math.random() * 6) + 1;
+                    diceDisplay.innerText = finalRoll;
+                    processMovement(finalRoll);
+                }
+            }, 50);
+        }
+
+        function processMovement(steps) {
+            let nextPos = currentPosition + steps;
+            if (nextPos > 36) {
+                // Berhenti mentok di 36 jika langkah lebih
+                nextPos = 36; 
+            }
+
+            let stepDelay = 0;
+            for (let i = currentPosition + 1; i <= nextPos; i++) {
+                setTimeout(() => {
+                    movePlayerTo(i);
+                }, stepDelay * 500);
+                stepDelay++;
+            }
+
+            // Setelah sampai di tujuan akhir
+            setTimeout(() => {
+                if (nextPos === 36) {
+                    triggerWin();
+                } else {
+                    showQuestionModal(nextPos);
+                }
+            }, stepDelay * 500 + 200);
+        }
+
+        // --- 5. LOGIKA EDUKASI & POPUP SOAL ---
+        const modal = document.getElementById('question-modal');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMsg = document.getElementById('feedback-message');
+        let currentActiveSquare = null;
+
+        // Variabel untuk modal notifikasi ular/tangga
+        const notifModal = document.getElementById('notification-modal');
+        const notifText = document.getElementById('notification-text');
+        const notifTitle = document.getElementById('notification-title');
+        const notifIcon = document.getElementById('notification-icon');
+        let pendingSnakeLadderMove = null;
+
+        function showQuestionModal(square) {
+            const dataSoal = soalIPAS[square];
+            if (!dataSoal) {
+                btnRoll.disabled = false;
+                isMoving = false;
+                return;
+            }
+
+            currentActiveSquare = square;
+            questionText.innerText = `Soal Kotak ${square}:\n${dataSoal.q}`;
+            optionsContainer.innerHTML = '';
+            feedbackMsg.innerHTML = '';
+
+            dataSoal.opts.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(index, dataSoal.ans);
+                optionsContainer.appendChild(btn);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        function checkAnswer(selectedIndex, correctIndex) {
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach(b => b.disabled = true); 
+
+            if (selectedIndex === correctIndex) {
+                feedbackMsg.innerHTML = '<span class="correct">Pintar sekali! Jawabanmu benar, anak hebat! 🌟</span>';
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    checkSnakeOrLadder(currentActiveSquare);
+                }, 2000);
+            } else {
+                feedbackMsg.innerHTML = '<span class="wrong">Ups, belum tepat sayang. Coba dibaca lagi pertanyaannya ya, kamu pasti bisa! 💪😊</span>';
+                
+                // Beri kesempatan lagi setelah 2.5 detik
+                setTimeout(() => {
+                    feedbackMsg.innerHTML = '';
+                    btns.forEach(b => b.disabled = false);
+                }, 2500);
+            }
+        }
+
+        function showNotification(msg, type) {
+            notifText.innerText = msg;
+            if (type === 'tangga') {
+                notifTitle.innerText = "Alhamdulillah, Naik!";
+                notifTitle.style.color = "#2ecc71";
+                notifIcon.innerText = "🪜";
+                notifIcon.style.background = "#2ecc71";
+                document.getElementById('notification-content').style.borderColor = "#2ecc71";
+            } else {
+                notifTitle.innerText = "Astaghfirullah, Turun!";
+                notifTitle.style.color = "#e74c3c";
+                notifIcon.innerText = "🐍";
+                notifIcon.style.background = "#e74c3c";
+                document.getElementById('notification-content').style.borderColor = "#e74c3c";
+            }
+            notifModal.style.display = 'flex';
+        }
+
+        function closeNotification() {
+            notifModal.style.display = 'none';
+            if (pendingSnakeLadderMove !== null) {
+                movePlayerTo(pendingSnakeLadderMove);
+                currentPosition = pendingSnakeLadderMove;
+                pendingSnakeLadderMove = null;
+                
+                // Selesai pindah ular/tangga, izinkan kocok dadu lagi
+                setTimeout(() => {
+                    btnRoll.disabled = false;
+                    isMoving = false;
+                }, 600);
+            }
+        }
+
+        function checkSnakeOrLadder(square) {
+            const rule = snakesAndLadders[square];
+            if (rule) {
+                // Jeda sebentar agar anak sadar posisinya ada ular/tangga
+                setTimeout(() => {
+                    pendingSnakeLadderMove = rule.to;
+                    showNotification("Bu Shobah bilang: \"" + rule.msg + "\"", rule.type);
+                }, 500);
+            } else {
+                btnRoll.disabled = false;
+                isMoving = false;
+            }
+        }
+
+        // --- 6. ANIMASI MENANG ---
+        function triggerWin() {
+            document.getElementById('win-modal').style.display = 'flex';
+            
+            var duration = 3000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#FF6B6B', '#4ECDC4', '#FFE66D']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#FF6B6B', '#4ECDC4', '#FFE66D']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+        
+        // Jaga posisi responsif jika layar diputar / resize
+        window.addEventListener('resize', () => {
+            movePlayerTo(currentPosition, true);
+        });
+
+    </script>
+</body>
+</html>
